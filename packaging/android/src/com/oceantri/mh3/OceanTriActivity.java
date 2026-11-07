@@ -43,15 +43,27 @@ public class OceanTriActivity extends SDLActivity {
     private volatile boolean mRomReady = false;
     private volatile boolean mLaunchReady = false;
     private boolean mRomCheckStarted = false;
+    // Human-readable labels shown in the dialog.
     private static final String[] CHEAT_LABELS = {
         "No damage",
         "No action stamina drain",
         "Infinite items",
-        "Inf gathering",
+        "Infinite gathering",
         "No knockback",
         "Infinite health",
         "Infinite stamina",
         "1 hit kills"
+    };
+    // Exact enum names from Cheats::Id in cheats.h — passed as --cheat <name> to native main().
+    private static final String[] CHEAT_IDS = {
+        "NoDamage",
+        "NoStaminaDrain",
+        "InfiniteItems",
+        "InfiniteGathering",
+        "NoKnockback",
+        "InfiniteHealth",
+        "InfiniteStamina",
+        "OneHitKills"
     };
     private static final boolean[] CHEAT_DEFAULTS = {
         false, false, false, false, false, false, false, false
@@ -253,7 +265,12 @@ public class OceanTriActivity extends SDLActivity {
         if (mRomReady || mLaunchReady) return;
         sRomPath = path;
         mRomReady = true;
-        runOnUiThread(new Runnable() {
+        // Post to the decor view's message queue — guarantees the window token is
+        // fully attached before AlertDialog.Builder tries to use it.  Plain
+        // runOnUiThread() can fire while super.onCreate() is still on the stack,
+        // before the window is attached, which causes WindowManager$BadTokenException
+        // (force-close) on Android 10 and some Android 11 devices.
+        getWindow().getDecorView().post(new Runnable() {
             @Override public void run() {
                 showCheatSelectionDialog();
             }
@@ -273,11 +290,13 @@ public class OceanTriActivity extends SDLActivity {
         builder.setPositiveButton("Mulai Game", new DialogInterface.OnClickListener() {
             @Override public void onClick(DialogInterface dialog, int which) {
                 ArrayList<String> selected = new ArrayList<>();
-                for (int i = 0; i < CHEAT_LABELS.length; i++) {
-                    if (mSelectedCheats[i]) selected.add(CHEAT_LABELS[i]);
+                for (int i = 0; i < CHEAT_IDS.length; i++) {
+                    if (mSelectedCheats[i]) {
+                        selected.add(CHEAT_IDS[i]);
+                        log("Enabled launch cheat: " + CHEAT_LABELS[i] + " (" + CHEAT_IDS[i] + ")");
+                    }
                 }
                 sCheatArguments = selected.toArray(new String[0]);
-                for (String cheat : sCheatArguments) log("Enabled launch cheat: " + cheat);
                 mLaunchReady = true;
             }
         });

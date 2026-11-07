@@ -3,6 +3,7 @@
 #include "droid_sans_atlas.h"
 #include "language.h"
 #include "save_manager.h"
+#include "cheats.h"
 #include "mh3_frame_rate_control.h"
 #include "widescreen.h"
 #include "memory.h"
@@ -1186,8 +1187,8 @@ private:
         }
 
         // Header Title & Subtitle (Larger readable fonts)
-        const char* titles_es[] = { "Gráficos", "Sistema", "Guardados", "Controles", "Online" };
-        const char* titles_en[] = { "Graphics", "System", "Saves", "Controls", "Online" };
+        const char* titles_es[] = { "Gráficos", "Sistema", "Guardados", "Controles", "Online", "Cheats" };
+        const char* titles_en[] = { "Graphics", "System", "Saves", "Controls", "Online", "Cheats" };
         const char* const* titles = (m_menuLang == 1) ? titles_en : titles_es;
 
         const char* subtitles_es[] = {
@@ -1195,14 +1196,16 @@ private:
             "Idioma del menú, juego y reinicio",
             "Gestor de partidas Dolphin / Wii NAND",
             "Visibilidad en pantalla, mando gamepad y macros",
-            "Multijugador local, ZeroTier y servidores comunitarios"
+            "Multijugador local, ZeroTier y servidores comunitarios",
+            "Activar y desactivar trucos del juego"
         };
         const char* subtitles_en[] = {
             "Display, resolution and presentation",
             "Menu language, game language and restart",
             "Dolphin / Wii NAND save file manager",
             "On-screen controls, gamepad and macros",
-            "Multiplayer, ZeroTier and community servers"
+            "Multiplayer, ZeroTier and community servers",
+            "Enable and disable in-game cheats"
         };
         const char* const* subtitles = (m_menuLang == 1) ? subtitles_en : subtitles_es;
         DrawText(padX + 24.0f, padY + 16.0f, titles[m_menuTab], 28.0f, COL_WHITE);
@@ -1229,9 +1232,9 @@ private:
 
         // Tab Navigation Bar
         float tabY = padY + 86.0f;
-        float tabW = (panW - 40.0f - 40.0f) / 5.0f;
+        float tabW = (panW - 40.0f - 40.0f) / 6.0f;
         float tabH = 44.0f;
-        for (int i = 0; i < 5; ++i) {
+        for (int i = 0; i < 6; ++i) {
             float tx = padX + 20.0f + float(i) * (tabW + 10.0f);
             bool active = (m_menuTab == i);
             DrawRoundedRect(tx, tabY, tabW, tabH, 8.0f,
@@ -1250,6 +1253,7 @@ private:
         else if (m_menuTab == 2) RenderTabSaves(padX + 20.0f, contentY, contentW);
         else if (m_menuTab == 3) RenderTabControls(padX + 20.0f, contentY, contentW);
         else if (m_menuTab == 4) RenderTabOnline(padX + 20.0f, contentY, contentW);
+        else if (m_menuTab == 5) RenderTabCheats(padX + 20.0f, contentY, contentW);
     }
 
     void RenderTabGraphics(float x, float y, float w) {
@@ -1733,6 +1737,116 @@ private:
         DrawText(barX + 50.0f + bw * 4.5f, by + 9.0f, Tr("Cancelar", "Cancel"), 13.0f, COL_MUTED, true);
     }
 
+    // ------------------------------------------------------------------
+    // Cheats Tab — scrollable toggle list built from Cheats::Id enum
+    // ------------------------------------------------------------------
+    void RenderTabCheats(float x, float y, float w) {
+        // Cheat entries — IDs match Cheats::Id enum in cheats.h exactly.
+        struct CheatEntry {
+            Cheats::Id id;
+            const char* label_es;
+            const char* label_en;
+        };
+        static const CheatEntry kEntries[] = {
+            // Hunter survival
+            { Cheats::Id::NoDamage,                 "Sin daño al cazador",        "No damage" },
+            { Cheats::Id::AltInfiniteHealth,         "Salud infinita",             "Infinite health" },
+            { Cheats::Id::NoStaminaDrain,            "Sin pérdida de stamina",     "No stamina drain" },
+            { Cheats::Id::SethOxygen,                "Aire infinito (submarino)",  "Infinite air" },
+            { Cheats::Id::HealthNeverChanges,        "Vida no cambia",             "Health never changes" },
+            { Cheats::Id::NeverPoison,               "Nunca envenenado",           "Never poisoned" },
+            { Cheats::Id::NeverStunned,              "Nunca aturdido",             "Never stunned" },
+            { Cheats::Id::NoDefeats,                 "Sin derrotas",               "No defeats" },
+            // Items & economy
+            { Cheats::Id::AllItems,                  "Todos los ítems",            "All items" },
+            { Cheats::Id::AllEquipment,              "Todo el equipo",             "All equipment" },
+            { Cheats::Id::InfiniteItems,             "Ítems infinitos",            "Infinite items" },
+            { Cheats::Id::InfiniteResources,         "Recursos infinitos",         "Infinite resources" },
+            { Cheats::Id::MaxMoney,                  "Dinero máximo",              "Max money" },
+            { Cheats::Id::NoNeedForMoney,            "Sin necesidad de zenny",     "No need for money" },
+            // Weapon & armor
+            { Cheats::Id::MaxAttackBase,             "Ataque base máximo",         "Max base attack" },
+            { Cheats::Id::MaxSharpness,              "Filo máximo",                "Max sharpness" },
+            { Cheats::Id::SethUltraSharp,            "Ultra filo Seth",            "Seth ultra sharp" },
+            { Cheats::Id::DefenseMax,                "Defensa máxima",             "Max defense" },
+            // Monster cheats
+            { Cheats::Id::OneHitKills,               "Mata de un golpe",           "One-hit kills" },
+            { Cheats::Id::EnemyOneHp,                "Monstruos con 1 HP",         "Monsters at 1 HP" },
+            { Cheats::Id::MonsterCantSeeYou,         "Monstruos no te ven",        "Monster can't see you" },
+            { Cheats::Id::FreezeUnfreezeMonsters,    "Congelar monstruos",         "Freeze monsters" },
+            // Quests & time
+            { Cheats::Id::InfiniteTime,              "Tiempo infinito",            "Infinite time" },
+            { Cheats::Id::AllQuestsCompleted,        "Todas las misiones",         "All quests completed" },
+            { Cheats::Id::AllStarQuests,             "Misiones estrella",          "All star quests" },
+            { Cheats::Id::InfiniteRetries,           "Reintentos infinitos",       "Infinite retries" },
+            // Movement & combat
+            { Cheats::Id::MoonJump,                  "Salto lunar",                "Moon jump" },
+            { Cheats::Id::SuperSpeed,                "Súper velocidad",            "Super speed" },
+            { Cheats::Id::WalkThroughWalls,          "Atravesar paredes",          "Walk through walls" },
+            { Cheats::Id::InfiniteAmmo,              "Munición infinita",          "Infinite ammo" },
+            // Gathering
+            { Cheats::Id::InfiniteGathering,         "Recolección infinita",       "Infinite gathering" },
+            { Cheats::Id::InfiniteCarving,           "Troceado infinito",          "Infinite carving" },
+        };
+        constexpr int kCount = int(sizeof(kEntries) / sizeof(kEntries[0]));
+
+        // Scroll state — persists across frames
+        const float kRowH   = 52.0f;
+        const float kPadY   = 10.0f;
+        const float kVisH   = float(m_height) * 0.92f - y - kPadY;
+        const int   kVis    = std::max(1, int(kVisH / kRowH));
+
+        // Clamp scroll
+        int maxScroll = std::max(0, kCount - kVis);
+        m_cheatScroll = std::max(0, std::min(m_cheatScroll, maxScroll));
+
+        // Header card: scroll indicators
+        float hdrH = 36.0f;
+        DrawRoundedRect(x, y, w, hdrH, 8.0f, COL_PANEL_CARD, COL_PANEL_BORDER);
+        char scrollBuf[48];
+        std::snprintf(scrollBuf, sizeof(scrollBuf), "%d – %d / %d",
+                      m_cheatScroll + 1,
+                      std::min(m_cheatScroll + kVis, kCount),
+                      kCount);
+        DrawText(x + w * 0.5f, y + 9.0f, scrollBuf, 15.0f, COL_MUTED, true);
+
+        float rowY = y + hdrH + 6.0f;
+        int rendered = 0;
+        for (int i = m_cheatScroll; i < kCount && rendered < kVis; ++i, ++rendered) {
+            const auto& e = kEntries[i];
+            bool on = Cheats::On(e.id);
+            const char* label = (m_menuLang == 1) ? e.label_en : e.label_es;
+
+            DrawRoundedRect(x, rowY, w, kRowH - 4.0f, 10.0f,
+                            on ? COL_ACTIVE_CHIP : COL_INACTIVE_CHIP,
+                            on ? COL_CYAN       : COL_CHIP_BORDER);
+            DrawText(x + 18.0f, rowY + 14.0f, label, 17.0f,
+                     on ? COL_ACTIVE_TEXT : COL_WHITE);
+
+            // Status badge on the right
+            float badgeW = 72.0f, badgeH = 28.0f;
+            float bx = x + w - badgeW - 12.0f;
+            float by = rowY + (kRowH - 4.0f - badgeH) * 0.5f;
+            DrawRoundedRect(bx, by, badgeW, badgeH, 6.0f,
+                            on ? COL_CYAN : COL_PANEL_CARD,
+                            on ? COL_CYAN : COL_CHIP_BORDER);
+            DrawText(bx + badgeW * 0.5f, by + 5.0f,
+                     on ? Tr("ON", "ON") : Tr("OFF", "OFF"),
+                     14.0f,
+                     on ? COL_ACTIVE_TEXT : COL_MUTED, true);
+
+            rowY += kRowH;
+        }
+
+        // Scroll arrow hints
+        if (m_cheatScroll > 0) {
+            DrawText(x + w * 0.5f, y + hdrH + 2.0f, "▲", 13.0f, COL_MUTED, true);
+        }
+        if (m_cheatScroll < maxScroll) {
+            DrawText(x + w * 0.5f, rowY + 2.0f, "▼", 13.0f, COL_MUTED, true);
+        }
+    }
+
     void RenderTabOnline(float x, float y, float w) {
         // Card 1: Modo de Conexión
         float c1H = 108.0f;
@@ -1814,10 +1928,10 @@ private:
 
         // Tabs
         float tabY = padY + 86.0f;
-        float tabW = (panW - 40.0f - 40.0f) / 5.0f;
+        float tabW = (panW - 40.0f - 40.0f) / 6.0f;
         float tabH = 44.0f;
         if (py >= tabY && py <= tabY + tabH) {
-            for (int i = 0; i < 5; ++i) {
+            for (int i = 0; i < 6; ++i) {
                 float tx = padX + 20.0f + float(i) * (tabW + 10.0f);
                 if (px >= tx && px <= tx + tabW) {
                     m_menuTab = i;
@@ -2137,6 +2251,73 @@ private:
             }
         } else if (m_menuTab == 4) { // Online / Multijugador
             HandleTabOnlineTouch(px, py, x, contentY, contentW);
+        } else if (m_menuTab == 5) { // Cheats
+            HandleTabCheatsTouch(px, py, x, contentY, contentW);
+        }
+    }
+
+    void HandleTabCheatsTouch(float px, float py, float x, float contentY, float contentW) {
+        // kEntries must stay in sync with RenderTabCheats — same order, same IDs.
+        struct CheatEntry { Cheats::Id id; };
+        static const CheatEntry kEntries[] = {
+            { Cheats::Id::NoDamage },
+            { Cheats::Id::AltInfiniteHealth },
+            { Cheats::Id::NoStaminaDrain },
+            { Cheats::Id::SethOxygen },
+            { Cheats::Id::HealthNeverChanges },
+            { Cheats::Id::NeverPoison },
+            { Cheats::Id::NeverStunned },
+            { Cheats::Id::NoDefeats },
+            { Cheats::Id::AllItems },
+            { Cheats::Id::AllEquipment },
+            { Cheats::Id::InfiniteItems },
+            { Cheats::Id::InfiniteResources },
+            { Cheats::Id::MaxMoney },
+            { Cheats::Id::NoNeedForMoney },
+            { Cheats::Id::MaxAttackBase },
+            { Cheats::Id::MaxSharpness },
+            { Cheats::Id::SethUltraSharp },
+            { Cheats::Id::DefenseMax },
+            { Cheats::Id::OneHitKills },
+            { Cheats::Id::EnemyOneHp },
+            { Cheats::Id::MonsterCantSeeYou },
+            { Cheats::Id::FreezeUnfreezeMonsters },
+            { Cheats::Id::InfiniteTime },
+            { Cheats::Id::AllQuestsCompleted },
+            { Cheats::Id::AllStarQuests },
+            { Cheats::Id::InfiniteRetries },
+            { Cheats::Id::MoonJump },
+            { Cheats::Id::SuperSpeed },
+            { Cheats::Id::WalkThroughWalls },
+            { Cheats::Id::InfiniteAmmo },
+            { Cheats::Id::InfiniteGathering },
+            { Cheats::Id::InfiniteCarving },
+        };
+        constexpr int kCount = int(sizeof(kEntries) / sizeof(kEntries[0]));
+
+        const float kRowH     = 52.0f;
+        const float hdrH      = 36.0f;
+        const float kVisH     = float(m_height) * 0.92f - contentY - 10.0f;
+        const int   kVis      = std::max(1, int(kVisH / kRowH));
+        const int   maxScroll = std::max(0, kCount - kVis);
+        const float rowAreaY  = contentY + hdrH + 6.0f;
+        const float listH     = float(kVis) * kRowH;
+
+        if (py < rowAreaY) {
+            m_cheatScroll = std::max(0, m_cheatScroll - 1);
+            return;
+        }
+        if (py > rowAreaY + listH) {
+            m_cheatScroll = std::min(maxScroll, m_cheatScroll + 1);
+            return;
+        }
+
+        int relRow = int((py - rowAreaY) / kRowH);
+        int idx    = m_cheatScroll + relRow;
+        if (idx >= 0 && idx < kCount) {
+            // Toggle via g_on[] — the only public write API Cheats exposes.
+            const size_t slot = size_t(kEntries[idx].id);
+            Cheats::g_on[slot] = !Cheats::g_on[slot];
         }
     }
 
@@ -2698,6 +2879,7 @@ private:
     std::atomic<int64_t> m_lastTouchMs{0};
     int m_menuLang = 0;        // 0: Español (default), 1: English
     int m_langChoice = 0;      // 0: Español
+    int m_cheatScroll = 0;     // Cheats tab scroll offset
     double m_liveFps = 60.0;
     std::string m_saveStatusMsg = "Listo para exportar o importar partidas guardadas.";
     int m_onlineMode = 3;
