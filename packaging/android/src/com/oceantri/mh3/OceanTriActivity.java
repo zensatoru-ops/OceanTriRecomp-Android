@@ -135,7 +135,7 @@ public class OceanTriActivity extends SDLActivity {
     protected void onCreate(Bundle savedInstanceState) {
         log("OceanTriActivity.onCreate() called");
 
-        // Crash handler to log Java crashes
+        // Crash handler to log Java crashes. Install it before SDL initialization.
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             @Override
             public void uncaughtException(Thread t, Throwable e) {
@@ -157,11 +157,11 @@ public class OceanTriActivity extends SDLActivity {
             }
         });
 
-        // Initialize SDL/Activity first. ROM detection can display dialogs, so it
-        // must not run before Activity.onCreate() has created the window.
+        // SDLActivity must initialize its window, surface, JNI and native libraries
+        // before this activity touches the window or displays ROM/permission dialogs.
         super.onCreate(savedInstanceState);
 
-        // Request 120Hz high refresh rate display mode after the Activity is ready.
+        // Only use Activity window/UI APIs after SDLActivity.onCreate() completes.
         setHighRefreshRate();
 
         if (hasStoragePermission()) {
