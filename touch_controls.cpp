@@ -1741,43 +1741,52 @@ private:
     // Cheats Tab — scrollable toggle list built from Cheats::Id enum
     // ------------------------------------------------------------------
     void RenderTabCheats(float x, float y, float w) {
-        // Cheat entries to show: id, label (ES), label (EN)
+        // Cheat entries — IDs match Cheats::Id enum in cheats.h exactly.
         struct CheatEntry {
             Cheats::Id id;
             const char* label_es;
             const char* label_en;
         };
         static const CheatEntry kEntries[] = {
-            { Cheats::Id::NoDamage,            "Sin daño al cazador",        "No damage" },
-            { Cheats::Id::InfiniteHealth,      "Salud infinita",             "Infinite health" },
-            { Cheats::Id::InfiniteStamina,     "Stamina infinita",           "Infinite stamina" },
-            { Cheats::Id::InfiniteAir,         "Aire infinito (submarino)",  "Infinite air" },
-            { Cheats::Id::NoStaminaDrain,      "Sin pérdida de stamina",     "No stamina drain" },
-            { Cheats::Id::AllItems,            "Todos los ítems",            "All items" },
-            { Cheats::Id::AllEquipment,        "Todo el equipo",             "All equipment" },
-            { Cheats::Id::MaxMoney,            "Dinero máximo",              "Max money" },
-            { Cheats::Id::InfiniteItems,       "Ítems infinitos",            "Infinite items" },
-            { Cheats::Id::InfiniteResources,   "Recursos infinitos",         "Infinite resources" },
-            { Cheats::Id::NoNeedForMoney,      "Sin necesidad de zenny",     "No need for money" },
-            { Cheats::Id::MaxAttackBase,       "Ataque base máximo",         "Max base attack" },
-            { Cheats::Id::MaxSharpness,        "Filo máximo",                "Max sharpness" },
-            { Cheats::Id::DefenseMax,          "Defensa máxima",             "Max defense" },
-            { Cheats::Id::OneHitKills,         "Mata de un golpe",           "One-hit kills" },
-            { Cheats::Id::EnemyOneHp,         "Monstruos con 1 HP",         "Monsters at 1 HP" },
-            { Cheats::Id::MonsterCantSeeYou,   "Monstruos no te ven",        "Monster can't see you" },
-            { Cheats::Id::FreezeMonsters,      "Congelar monstruos",         "Freeze monsters" },
-            { Cheats::Id::InfiniteTime,        "Tiempo infinito",            "Infinite time" },
-            { Cheats::Id::InfiniteAmmo,        "Munición infinita",          "Infinite ammo" },
-            { Cheats::Id::MoonJump,            "Salto lunar",                "Moon jump" },
-            { Cheats::Id::SuperSpeed,          "Súper velocidad",            "Super speed" },
-            { Cheats::Id::WalkThroughWalls,    "Atravesar paredes",          "Walk through walls" },
-            { Cheats::Id::NoDefeats,           "Sin derrotas",               "No defeats" },
-            { Cheats::Id::AllQuestsCompleted,  "Todas las misiones completadas", "All quests completed" },
-            { Cheats::Id::AllStarQuests,       "Todas las misiones estrella","All star quests" },
-            { Cheats::Id::InfiniteGathering,   "Recolección infinita",       "Infinite gathering" },
-            { Cheats::Id::InfiniteCarving,     "Troceado infinito",          "Infinite carving" },
-            { Cheats::Id::NeverPoison,         "Nunca envenenado",           "Never poisoned" },
-            { Cheats::Id::NeverStunned,        "Nunca aturdido",             "Never stunned" },
+            // Hunter survival
+            { Cheats::Id::NoDamage,                 "Sin daño al cazador",        "No damage" },
+            { Cheats::Id::AltInfiniteHealth,         "Salud infinita",             "Infinite health" },
+            { Cheats::Id::NoStaminaDrain,            "Sin pérdida de stamina",     "No stamina drain" },
+            { Cheats::Id::SethOxygen,                "Aire infinito (submarino)",  "Infinite air" },
+            { Cheats::Id::HealthNeverChanges,        "Vida no cambia",             "Health never changes" },
+            { Cheats::Id::NeverPoison,               "Nunca envenenado",           "Never poisoned" },
+            { Cheats::Id::NeverStunned,              "Nunca aturdido",             "Never stunned" },
+            { Cheats::Id::NoDefeats,                 "Sin derrotas",               "No defeats" },
+            // Items & economy
+            { Cheats::Id::AllItems,                  "Todos los ítems",            "All items" },
+            { Cheats::Id::AllEquipment,              "Todo el equipo",             "All equipment" },
+            { Cheats::Id::InfiniteItems,             "Ítems infinitos",            "Infinite items" },
+            { Cheats::Id::InfiniteResources,         "Recursos infinitos",         "Infinite resources" },
+            { Cheats::Id::MaxMoney,                  "Dinero máximo",              "Max money" },
+            { Cheats::Id::NoNeedForMoney,            "Sin necesidad de zenny",     "No need for money" },
+            // Weapon & armor
+            { Cheats::Id::MaxAttackBase,             "Ataque base máximo",         "Max base attack" },
+            { Cheats::Id::MaxSharpness,              "Filo máximo",                "Max sharpness" },
+            { Cheats::Id::SethUltraSharp,            "Ultra filo Seth",            "Seth ultra sharp" },
+            { Cheats::Id::DefenseMax,                "Defensa máxima",             "Max defense" },
+            // Monster cheats
+            { Cheats::Id::OneHitKills,               "Mata de un golpe",           "One-hit kills" },
+            { Cheats::Id::EnemyOneHp,                "Monstruos con 1 HP",         "Monsters at 1 HP" },
+            { Cheats::Id::MonsterCantSeeYou,         "Monstruos no te ven",        "Monster can't see you" },
+            { Cheats::Id::FreezeUnfreezeMonsters,    "Congelar monstruos",         "Freeze monsters" },
+            // Quests & time
+            { Cheats::Id::InfiniteTime,              "Tiempo infinito",            "Infinite time" },
+            { Cheats::Id::AllQuestsCompleted,        "Todas las misiones",         "All quests completed" },
+            { Cheats::Id::AllStarQuests,             "Misiones estrella",          "All star quests" },
+            { Cheats::Id::InfiniteRetries,           "Reintentos infinitos",       "Infinite retries" },
+            // Movement & combat
+            { Cheats::Id::MoonJump,                  "Salto lunar",                "Moon jump" },
+            { Cheats::Id::SuperSpeed,                "Súper velocidad",            "Super speed" },
+            { Cheats::Id::WalkThroughWalls,          "Atravesar paredes",          "Walk through walls" },
+            { Cheats::Id::InfiniteAmmo,              "Munición infinita",          "Infinite ammo" },
+            // Gathering
+            { Cheats::Id::InfiniteGathering,         "Recolección infinita",       "Infinite gathering" },
+            { Cheats::Id::InfiniteCarving,           "Troceado infinito",          "Infinite carving" },
         };
         constexpr int kCount = int(sizeof(kEntries) / sizeof(kEntries[0]));
 
@@ -2248,72 +2257,67 @@ private:
     }
 
     void HandleTabCheatsTouch(float px, float py, float x, float contentY, float contentW) {
-        // Mirror kEntries from RenderTabCheats
-        struct CheatEntry { Cheats::Id id; const char* label_es; const char* label_en; };
+        // kEntries must stay in sync with RenderTabCheats — same order, same IDs.
+        struct CheatEntry { Cheats::Id id; };
         static const CheatEntry kEntries[] = {
-            { Cheats::Id::NoDamage,            "Sin daño al cazador",        "No damage" },
-            { Cheats::Id::InfiniteHealth,      "Salud infinita",             "Infinite health" },
-            { Cheats::Id::InfiniteStamina,     "Stamina infinita",           "Infinite stamina" },
-            { Cheats::Id::InfiniteAir,         "Aire infinito (submarino)",  "Infinite air" },
-            { Cheats::Id::NoStaminaDrain,      "Sin pérdida de stamina",     "No stamina drain" },
-            { Cheats::Id::AllItems,            "Todos los ítems",            "All items" },
-            { Cheats::Id::AllEquipment,        "Todo el equipo",             "All equipment" },
-            { Cheats::Id::MaxMoney,            "Dinero máximo",              "Max money" },
-            { Cheats::Id::InfiniteItems,       "Ítems infinitos",            "Infinite items" },
-            { Cheats::Id::InfiniteResources,   "Recursos infinitos",         "Infinite resources" },
-            { Cheats::Id::NoNeedForMoney,      "Sin necesidad de zenny",     "No need for money" },
-            { Cheats::Id::MaxAttackBase,       "Ataque base máximo",         "Max base attack" },
-            { Cheats::Id::MaxSharpness,        "Filo máximo",                "Max sharpness" },
-            { Cheats::Id::DefenseMax,          "Defensa máxima",             "Max defense" },
-            { Cheats::Id::OneHitKills,         "Mata de un golpe",           "One-hit kills" },
-            { Cheats::Id::EnemyOneHp,         "Monstruos con 1 HP",         "Monsters at 1 HP" },
-            { Cheats::Id::MonsterCantSeeYou,   "Monstruos no te ven",        "Monster can't see you" },
-            { Cheats::Id::FreezeMonsters,      "Congelar monstruos",         "Freeze monsters" },
-            { Cheats::Id::InfiniteTime,        "Tiempo infinito",            "Infinite time" },
-            { Cheats::Id::InfiniteAmmo,        "Munición infinita",          "Infinite ammo" },
-            { Cheats::Id::MoonJump,            "Salto lunar",                "Moon jump" },
-            { Cheats::Id::SuperSpeed,          "Súper velocidad",            "Super speed" },
-            { Cheats::Id::WalkThroughWalls,    "Atravesar paredes",          "Walk through walls" },
-            { Cheats::Id::NoDefeats,           "Sin derrotas",               "No defeats" },
-            { Cheats::Id::AllQuestsCompleted,  "Todas las misiones completadas", "All quests completed" },
-            { Cheats::Id::AllStarQuests,       "Todas las misiones estrella","All star quests" },
-            { Cheats::Id::InfiniteGathering,   "Recolección infinita",       "Infinite gathering" },
-            { Cheats::Id::InfiniteCarving,     "Troceado infinito",          "Infinite carving" },
-            { Cheats::Id::NeverPoison,         "Nunca envenenado",           "Never poisoned" },
-            { Cheats::Id::NeverStunned,        "Nunca aturdido",             "Never stunned" },
+            { Cheats::Id::NoDamage },
+            { Cheats::Id::AltInfiniteHealth },
+            { Cheats::Id::NoStaminaDrain },
+            { Cheats::Id::SethOxygen },
+            { Cheats::Id::HealthNeverChanges },
+            { Cheats::Id::NeverPoison },
+            { Cheats::Id::NeverStunned },
+            { Cheats::Id::NoDefeats },
+            { Cheats::Id::AllItems },
+            { Cheats::Id::AllEquipment },
+            { Cheats::Id::InfiniteItems },
+            { Cheats::Id::InfiniteResources },
+            { Cheats::Id::MaxMoney },
+            { Cheats::Id::NoNeedForMoney },
+            { Cheats::Id::MaxAttackBase },
+            { Cheats::Id::MaxSharpness },
+            { Cheats::Id::SethUltraSharp },
+            { Cheats::Id::DefenseMax },
+            { Cheats::Id::OneHitKills },
+            { Cheats::Id::EnemyOneHp },
+            { Cheats::Id::MonsterCantSeeYou },
+            { Cheats::Id::FreezeUnfreezeMonsters },
+            { Cheats::Id::InfiniteTime },
+            { Cheats::Id::AllQuestsCompleted },
+            { Cheats::Id::AllStarQuests },
+            { Cheats::Id::InfiniteRetries },
+            { Cheats::Id::MoonJump },
+            { Cheats::Id::SuperSpeed },
+            { Cheats::Id::WalkThroughWalls },
+            { Cheats::Id::InfiniteAmmo },
+            { Cheats::Id::InfiniteGathering },
+            { Cheats::Id::InfiniteCarving },
         };
         constexpr int kCount = int(sizeof(kEntries) / sizeof(kEntries[0]));
 
-        const float kRowH = 52.0f;
-        const float hdrH  = 42.0f; // header card height (matches render)
-        const float kVisH = float(m_height) * 0.92f - contentY - 10.0f;
-        const int   kVis  = std::max(1, int(kVisH / kRowH));
+        const float kRowH     = 52.0f;
+        const float hdrH      = 36.0f;
+        const float kVisH     = float(m_height) * 0.92f - contentY - 10.0f;
+        const int   kVis      = std::max(1, int(kVisH / kRowH));
         const int   maxScroll = std::max(0, kCount - kVis);
-
-        float rowAreaY = contentY + hdrH + 6.0f;
-
-        // Swipe / scroll: vertical drag inside the list area toggles scroll
-        // For simplicity: tap the top quarter → scroll up; tap bottom quarter → scroll down;
-        // tap a row → toggle that cheat.
-        const float listH = float(kVis) * kRowH;
+        const float rowAreaY  = contentY + hdrH + 6.0f;
+        const float listH     = float(kVis) * kRowH;
 
         if (py < rowAreaY) {
-            // Tap on header = scroll up
             m_cheatScroll = std::max(0, m_cheatScroll - 1);
             return;
         }
         if (py > rowAreaY + listH) {
-            // Tap below list = scroll down
             m_cheatScroll = std::min(maxScroll, m_cheatScroll + 1);
             return;
         }
 
-        // Which row was tapped?
         int relRow = int((py - rowAreaY) / kRowH);
-        int idx = m_cheatScroll + relRow;
+        int idx    = m_cheatScroll + relRow;
         if (idx >= 0 && idx < kCount) {
-            bool cur = Cheats::On(kEntries[idx].id);
-            Cheats::Enable(size_t(kEntries[idx].id), !cur);
+            // Toggle via g_on[] — the only public write API Cheats exposes.
+            const size_t slot = size_t(kEntries[idx].id);
+            Cheats::g_on[slot] = !Cheats::g_on[slot];
         }
     }
 
