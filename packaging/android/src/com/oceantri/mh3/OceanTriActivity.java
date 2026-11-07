@@ -41,7 +41,23 @@ public class OceanTriActivity extends SDLActivity {
     private static final LinkedList<String> sLogBuffer = new LinkedList<>();
     private static String sRomPath = null;
     private volatile boolean mRomReady = false;
+    private volatile boolean mLaunchReady = false;
     private boolean mRomCheckStarted = false;
+    private static final String[] CHEAT_LABELS = {
+        "No damage",
+        "No action stamina drain",
+        "Infinite items",
+        "Inf gathering",
+        "No knockback",
+        "Infinite health",
+        "Infinite stamina",
+        "1 hit kills"
+    };
+    private static final boolean[] CHEAT_DEFAULTS = {
+        false, false, false, false, false, false, false, false
+    };
+    private final boolean[] mSelectedCheats = CHEAT_DEFAULTS.clone();
+    private static String[] sCheatArguments = new String[0];
 
     public static synchronized void log(String msg) {
         String timestamp = new SimpleDateFormat("HH:mm:ss.SSS", Locale.US).format(new Date());
@@ -90,11 +106,17 @@ public class OceanTriActivity extends SDLActivity {
 
     @Override
     protected String[] getArguments() {
+        ArrayList<String> args = new ArrayList<>();
         if (sRomPath != null && !sRomPath.isEmpty()) {
             log("Passing --rom argument to native main(): " + sRomPath);
-            return new String[] { "--rom", sRomPath };
+            args.add("--rom");
+            args.add(sRomPath);
         }
-        return new String[0];
+        for (String cheat : sCheatArguments) {
+            args.add("--cheat");
+            args.add(cheat);
+        }
+        return args.toArray(new String[0]);
     }
 
     public static final int COMMAND_RESTART = 0x8001;
@@ -162,7 +184,7 @@ public class OceanTriActivity extends SDLActivity {
     @Override
     protected void main() {
         log("OceanTriActivity.main() thread waiting for ROM ready...");
-        while (!mRomReady && !isFinishing()) {
+        while (!mLaunchReady && !isFinishing()) {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException ignored) {}
@@ -171,7 +193,7 @@ public class OceanTriActivity extends SDLActivity {
             log("OceanTriActivity.main() aborting because activity is finishing");
             return;
         }
-        log("OceanTriActivity.main() ROM ready! Launching native main() with: " + sRomPath);
+        log("OceanTriActivity.main() launch ready. ROM: " + sRomPath + ", cheats: " + sCheatArguments.length);
         super.main();
     }
 
@@ -226,6 +248,48 @@ public class OceanTriActivity extends SDLActivity {
         }
     }
 
+    private void markRomReady(final String path) {
+        if (mRomReady || mLaunchReady) return;
+        sRomPath = path;
+        mRomReady = true;
+        runOnUiThread(new Runnable() {
+            @Override public void run() {
+                showCheatSelectionDialog();
+            }
+        });
+    }
+
+    private void showCheatSelectionDialog() {
+        if (isFinishing() || mLaunchReady) return;
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Monster Hunter Tri — Cheats");
+        builder.setMessage("Pilih cheat yang ingin diaktifkan untuk sesi ini. Semua pilihan bisa diubah saat aplikasi dibuka ulang.");
+        builder.setMultiChoiceItems(CHEAT_LABELS, mSelectedCheats, new DialogInterface.OnMultiChoiceClickListener() {
+            @Override public void onClick(DialogInterface dialog, int which, boolean checked) {
+                mSelectedCheats[which] = checked;
+            }
+        });
+        builder.setPositiveButton("Mulai Game", new DialogInterface.OnClickListener() {
+            @Override public void onClick(DialogInterface dialog, int which) {
+                ArrayList<String> selected = new ArrayList<>();
+                for (int i = 0; i < CHEAT_LABELS.length; i++) {
+                    if (mSelectedCheats[i]) selected.add(CHEAT_LABELS[i]);
+                }
+                sCheatArguments = selected.toArray(new String[0]);
+                for (String cheat : sCheatArguments) log("Enabled launch cheat: " + cheat);
+                mLaunchReady = true;
+            }
+        });
+        builder.setNegativeButton("Mulai tanpa cheat", new DialogInterface.OnClickListener() {
+            @Override public void onClick(DialogInterface dialog, int which) {
+                sCheatArguments = new String[0];
+                mLaunchReady = true;
+            }
+        });
+        builder.setCancelable(false);
+        builder.show();
+    }
+
     private synchronized void checkRomAndPrepare() {
         if (mRomReady) {
             return;
@@ -239,8 +303,7 @@ public class OceanTriActivity extends SDLActivity {
 
         File existingMh3Rom = findRomInDir(mh3Dir);
         if (existingMh3Rom != null) {
-            sRomPath = existingMh3Rom.getAbsolutePath();
-            mRomReady = true;
+            markRomReady(existingMh3Rom.getAbsolutePath());
             log("ROM already present in target directory /storage/emulated/0/MH3: " + sRomPath);
             return;
         }
@@ -250,8 +313,7 @@ public class OceanTriActivity extends SDLActivity {
         // 2. Search for ROM in other common directories (e.g. Download)
         final String foundOtherRom = findGameRom();
         if (foundOtherRom != null) {
-            sRomPath = foundOtherRom;
-            mRomReady = true;
+            markRomReady(foundOtherRom);
             log("Found ROM automatically, launching: " + sRomPath);
             return;
         }
@@ -286,8 +348,7 @@ public class OceanTriActivity extends SDLActivity {
         builder.setNegativeButton("Usar sin copiar", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                sRomPath = detectedPath;
-                mRomReady = true;
+                markRomReady(detectedPath);
                 log("Using ROM directly without copying: " + sRomPath);
             }
         });
@@ -379,8 +440,7 @@ public class OceanTriActivity extends SDLActivity {
 
         if (targetFile.exists() && fileSize > 0 && targetFile.length() == fileSize) {
             log("Target file already exists with same size: " + targetFile.getAbsolutePath());
-            sRomPath = targetFile.getAbsolutePath();
-            mRomReady = true;
+            markRomReady(targetFile.getAbsolutePath());
             return;
         }
 
@@ -433,8 +493,7 @@ public class OceanTriActivity extends SDLActivity {
                         @Override
                         public void run() {
                             progressDialog.dismiss();
-                            sRomPath = targetFile.getAbsolutePath();
-                            mRomReady = true;
+                            markRomReady(targetFile.getAbsolutePath());
                         }
                     });
                 } catch (final Exception e) {
@@ -472,8 +531,7 @@ public class OceanTriActivity extends SDLActivity {
 
     private void copyFileWithProgress(final File sourceFile, final File targetFile) {
         if (sourceFile.getAbsolutePath().equals(targetFile.getAbsolutePath())) {
-            sRomPath = targetFile.getAbsolutePath();
-            mRomReady = true;
+            markRomReady(targetFile.getAbsolutePath());
             return;
         }
 
@@ -522,8 +580,7 @@ public class OceanTriActivity extends SDLActivity {
                         @Override
                         public void run() {
                             progressDialog.dismiss();
-                            sRomPath = targetFile.getAbsolutePath();
-                            mRomReady = true;
+                            markRomReady(targetFile.getAbsolutePath());
                         }
                     });
                 } catch (final Exception e) {
