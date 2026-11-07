@@ -135,9 +135,6 @@ public class OceanTriActivity extends SDLActivity {
     protected void onCreate(Bundle savedInstanceState) {
         log("OceanTriActivity.onCreate() called");
 
-        // Request 120Hz high refresh rate display mode
-        setHighRefreshRate();
-
         // Crash handler to log Java crashes
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             @Override
@@ -160,6 +157,13 @@ public class OceanTriActivity extends SDLActivity {
             }
         });
 
+        // Initialize SDL/Activity first. ROM detection can display dialogs, so it
+        // must not run before Activity.onCreate() has created the window.
+        super.onCreate(savedInstanceState);
+
+        // Request 120Hz high refresh rate display mode after the Activity is ready.
+        setHighRefreshRate();
+
         if (hasStoragePermission()) {
             log("Storage permission granted at startup. Verifying ROM...");
             checkRomAndPrepare();
@@ -167,9 +171,6 @@ public class OceanTriActivity extends SDLActivity {
             log("Storage permissions not yet granted. Requesting...");
             requestStoragePermission();
         }
-
-        // Call super.onCreate synchronously (required by Android)
-        super.onCreate(savedInstanceState);
     }
 
     @Override
