@@ -41,12 +41,20 @@ jobs:
         run: |
           dotnet build toolchain/translator/src/Translator.Cli/Translator.Cli.csproj -c Release
 
-      - name: Fetch prebuilt libSDL3.so
+      - name: Build libSDL3.so from source (NDK r28, 4KB page, Android 10+)
         run: |
           mkdir -p packaging/android/libs/arm64-v8a
-          curl -L -s -o base_v1.5.apk https://github.com/Kiridor123/OceanTriRecomp-Android/releases/download/v1.5/OceanTriRecomp-Android-v1.5-arm64.apk
-          unzip -p base_v1.5.apk lib/arm64-v8a/libSDL3.so > packaging/android/libs/arm64-v8a/libSDL3.so
-          rm -f base_v1.5.apk
+          git clone --depth 1 --branch release-3.4.16 https://github.com/libsdl-org/SDL.git $RUNNER_TEMP/SDL3-src
+          cmake -S $RUNNER_TEMP/SDL3-src -B $RUNNER_TEMP/SDL3-build -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_HOME/ndk/28.2.13676358/build/cmake/android.toolchain.cmake \
+            -DANDROID_ABI=arm64-v8a \
+            -DANDROID_PLATFORM=android-29 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DSDL_SHARED=ON \
+            -DSDL_STATIC=OFF \
+            -DCMAKE_SHARED_LINKER_FLAGS="-Wl,-z,max-page-size=4096"
+          cmake --build $RUNNER_TEMP/SDL3-build --target SDL3-shared --parallel $(nproc)
+          cp $RUNNER_TEMP/SDL3-build/libSDL3.so packaging/android/libs/arm64-v8a/libSDL3.so
 
       - name: Build OpenSSL for Android ARM64
         run: |
