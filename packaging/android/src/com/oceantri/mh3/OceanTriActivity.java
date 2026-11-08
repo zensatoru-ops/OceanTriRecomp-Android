@@ -112,6 +112,23 @@ public class OceanTriActivity extends SDLActivity {
     }
 
     @Override
+    public void loadLibraries() {
+        for (String lib : getLibraries()) {
+            log("DIAG loadLib START: " + lib);
+            try {
+                System.loadLibrary(lib);
+                log("DIAG loadLib OK: " + lib);
+            } catch (UnsatisfiedLinkError e) {
+                log("DIAG loadLib FAIL UnsatisfiedLinkError: " + lib + " — " + e.getMessage());
+                throw e;
+            } catch (Throwable t) {
+                log("DIAG loadLib FAIL " + t.getClass().getName() + ": " + lib + " — " + t.getMessage());
+                throw t;
+            }
+        }
+    }
+
+    @Override
     protected String getMainFunction() {
         return "SDL_main";
     }
@@ -169,9 +186,26 @@ public class OceanTriActivity extends SDLActivity {
         });
         log("DIAG step=2 crash-handler-installed");
 
+        // Write a pre-crash marker before entering native .so load.
+        // If the app dies after this and before step=4, the marker file
+        // tells us crash happened in loadLibraries / JNI_OnLoad (native signal).
+        try {
+            File diagDir = new File("/storage/emulated/0/MH3/logs");
+            if (!diagDir.exists()) diagDir.mkdirs();
+            FileWriter fw = new FileWriter(new File(diagDir, "oceantri_crash.txt"), false);
+            fw.write("NATIVE CRASH MARKER: app entered super.onCreate but never returned.\n"
+                   + "Crash happened in loadLibraries() or JNI_OnLoad — native signal (SIGSEGV/SIGABRT).\n"
+                   + "Check adb logcat -s \"libc\" \"DEBUG\" \"AndroidRuntime\" for the native stack trace.\n");
+            fw.close();
+        } catch (Exception ignored) {}
+
         try {
             log("DIAG step=3 calling super.onCreate");
             super.onCreate(savedInstanceState);
+            // If we reach here, .so loaded OK — clear the crash marker.
+            try {
+                new File("/storage/emulated/0/MH3/logs/oceantri_crash.txt").delete();
+            } catch (Exception ignored) {}
             log("DIAG step=4 super.onCreate returned OK");
         } catch (Throwable t) {
             log("DIAG CRASH in super.onCreate: " + t.getClass().getName() + ": " + t.getMessage());
