@@ -90,10 +90,10 @@ echo "=== 7. Adding Native Libraries to APK ==="
 cd "${BUILD_DIR}/apk_root"
 jar -uf "${BUILD_DIR}/base.apk" lib/arm64-v8a/libmain.so lib/arm64-v8a/libpng16.so lib/arm64-v8a/libSDL3.so
 
-echo "=== 8. Aligning APK (16KB page alignment) ==="
+echo "=== 8. Aligning APK (4KB page alignment, compatible Android 10+) ==="
 cd "${BUILD_DIR}"
 rm -f aligned.apk
-"${SDK_BUILD_TOOLS}/zipalign" -P 16 -f 4 base.apk aligned.apk
+"${SDK_BUILD_TOOLS}/zipalign" -P 4 -f 4 base.apk aligned.apk
 
 echo "=== 9. Signing APK ==="
 if [ ! -f "${KEYSTORE}" ]; then
