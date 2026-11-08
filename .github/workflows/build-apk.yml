@@ -75,6 +75,19 @@ jobs:
           chmod +x scripts/build-android.sh packaging/android/build_apk.sh
           bash scripts/build-android.sh
 
+      - name: Audit libmain.so symbols (diagnose load failure)
+        run: |
+          NDK=$ANDROID_HOME/ndk/28.2.13676358
+          READELF=$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf
+          LIBMAIN=$(find build-android -name "libmain.so" | head -1)
+          LIBSDL3=packaging/android/libs/arm64-v8a/libSDL3.so
+          echo "=== libmain.so size ===" && ls -lh $LIBMAIN
+          echo "=== NEEDED libraries ===" && $READELF -d $LIBMAIN | grep NEEDED
+          echo "=== libmain.so LOAD segment alignment ===" && $READELF -l $LIBMAIN | grep -A1 "LOAD"
+          echo "=== libSDL3.so LOAD segment alignment ===" && $READELF -l $LIBSDL3 | grep -A1 "LOAD"
+          echo "=== libmain.so undefined symbols ===" && $READELF --syms $LIBMAIN | grep " UND " | grep -v "0x0000000000000000" | head -40
+          echo "=== .init_array size ===" && $READELF -S $LIBMAIN | grep init_array
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:

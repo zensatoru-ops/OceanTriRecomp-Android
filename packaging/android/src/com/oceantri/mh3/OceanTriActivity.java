@@ -115,14 +115,38 @@ public class OceanTriActivity extends SDLActivity {
     public void loadLibraries() {
         for (String lib : getLibraries()) {
             log("DIAG loadLib START: " + lib);
+            if (lib.equals("main")) {
+                // libmain.so crashes the process before System.loadLibrary returns.
+                // Write a pre-load marker so we can confirm it was attempted.
+                try {
+                    File f = new File("/storage/emulated/0/MH3/logs/libmain_load.txt");
+                    FileWriter fw = new FileWriter(f, false);
+                    fw.write("libmain load attempted — if app crashed after this, cause is inside libmain.so\n");
+                    fw.write("nativeLibraryDir: " + getApplicationInfo().nativeLibraryDir + "\n");
+                    // List what .so files actually landed in the APK's native lib dir
+                    File libDir = new File(getApplicationInfo().nativeLibraryDir);
+                    for (File soFile : libDir.listFiles() != null ? libDir.listFiles() : new File[0]) {
+                        fw.write("  found: " + soFile.getName() + " (" + soFile.length() + " bytes)\n");
+                    }
+                    fw.close();
+                } catch (Exception ignored) {}
+            }
             try {
                 System.loadLibrary(lib);
                 log("DIAG loadLib OK: " + lib);
+                if (lib.equals("main")) {
+                    try { new File("/storage/emulated/0/MH3/logs/libmain_load.txt").delete(); } catch (Exception ignored) {}
+                }
             } catch (UnsatisfiedLinkError e) {
-                log("DIAG loadLib FAIL UnsatisfiedLinkError: " + lib + " — " + e.getMessage());
+                log("DIAG loadLib FAIL UnsatisfiedLinkError [" + lib + "]: " + e.getMessage());
+                try {
+                    FileWriter fw = new FileWriter(new File("/storage/emulated/0/MH3/logs/libmain_load.txt"), true);
+                    fw.write("UnsatisfiedLinkError: " + e.getMessage() + "\n");
+                    fw.close();
+                } catch (Exception ignored) {}
                 throw e;
             } catch (Throwable t) {
-                log("DIAG loadLib FAIL " + t.getClass().getName() + ": " + lib + " — " + t.getMessage());
+                log("DIAG loadLib FAIL " + t.getClass().getName() + " [" + lib + "]: " + t.getMessage());
                 throw t;
             }
         }
