@@ -146,20 +146,19 @@ public class OceanTriActivity extends SDLActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         log("OceanTriActivity.onCreate() called");
+        log("DIAG step=1 sdk=" + Build.VERSION.SDK_INT + " model=" + Build.MODEL);
 
-        // Crash handler to log Java crashes. Install it before SDL initialization.
+        // Crash handler — installed before super.onCreate() so it covers SDL init.
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             @Override
             public void uncaughtException(Thread t, Throwable e) {
                 StringWriter sw = new StringWriter();
                 e.printStackTrace(new PrintWriter(sw));
                 String stackTrace = sw.toString();
-                log("FATAL JAVA UNCAUGHT EXCEPTION: " + stackTrace);
+                log("FATAL JAVA UNCAUGHT EXCEPTION in thread [" + t.getName() + "]: " + stackTrace);
                 try {
                     File crashDir = new File("/storage/emulated/0/MH3/logs");
-                    if (!crashDir.exists()) {
-                        crashDir.mkdirs();
-                    }
+                    if (!crashDir.exists()) crashDir.mkdirs();
                     File crashFile = new File(crashDir, "oceantri_crash.txt");
                     FileWriter fw = new FileWriter(crashFile, true);
                     fw.write("UNCAUGHT EXCEPTION in thread " + t.getName() + ":\n" + stackTrace + "\n");
@@ -168,21 +167,32 @@ public class OceanTriActivity extends SDLActivity {
                 System.exit(1);
             }
         });
+        log("DIAG step=2 crash-handler-installed");
 
-        // SDLActivity must initialize its window, surface, JNI and native libraries
-        // before this activity touches the window or displays ROM/permission dialogs.
-        super.onCreate(savedInstanceState);
+        try {
+            log("DIAG step=3 calling super.onCreate");
+            super.onCreate(savedInstanceState);
+            log("DIAG step=4 super.onCreate returned OK");
+        } catch (Throwable t) {
+            log("DIAG CRASH in super.onCreate: " + t.getClass().getName() + ": " + t.getMessage());
+            throw t;
+        }
 
-        // Only use Activity window/UI APIs after SDLActivity.onCreate() completes.
+        log("DIAG step=5 calling setHighRefreshRate");
         setHighRefreshRate();
+        log("DIAG step=6 setHighRefreshRate done");
 
         if (hasStoragePermission()) {
-            log("Storage permission granted at startup. Verifying ROM...");
+            log("DIAG step=7a storage permission granted");
             checkRomAndPrepare();
+            log("DIAG step=8a checkRomAndPrepare returned");
         } else {
-            log("Storage permissions not yet granted. Requesting...");
+            log("DIAG step=7b no storage permission, requesting");
             requestStoragePermission();
+            log("DIAG step=8b requestStoragePermission returned");
         }
+
+        log("DIAG step=9 onCreate fully complete");
     }
 
     @Override
@@ -272,13 +282,22 @@ public class OceanTriActivity extends SDLActivity {
         // (force-close) on Android 10 and some Android 11 devices.
         getWindow().getDecorView().post(new Runnable() {
             @Override public void run() {
-                showCheatSelectionDialog();
+                log("DIAG markRomReady.post running, calling showCheatSelectionDialog");
+                try {
+                    showCheatSelectionDialog();
+                } catch (Throwable t) {
+                    log("DIAG CRASH in showCheatSelectionDialog: " + t.getClass().getName() + ": " + t.getMessage());
+                    // Dialog failed — launch without cheat selection
+                    sCheatArguments = new String[0];
+                    mLaunchReady = true;
+                }
             }
         });
     }
 
     private void showCheatSelectionDialog() {
         if (isFinishing() || mLaunchReady) return;
+        log("DIAG showCheatSelectionDialog building AlertDialog");
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Monster Hunter Tri — Cheats");
         builder.setMessage("Pilih cheat yang ingin diaktifkan untuk sesi ini. Semua pilihan bisa diubah saat aplikasi dibuka ulang.");
