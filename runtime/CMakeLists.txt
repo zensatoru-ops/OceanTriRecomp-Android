@@ -351,9 +351,6 @@ target_include_directories(MH3 PRIVATE include ..)
 
 if(ANDROID)
   set_target_properties(MH3 PROPERTIES OUTPUT_NAME "main")
-  # NDK r28 defaults to 16KB page alignment on arm64 (for Android 15+).
-  # Android 10 (SDK 29) only supports 4KB — override here so dlopen() works.
-  target_link_options(MH3 PRIVATE "-Wl,-z,max-page-size=4096")
   target_link_libraries(MH3 PRIVATE log GLESv3 EGL android)
   set(OPENSSL_ANDROID_DIR "" CACHE PATH "Path to openssl android install")
   if(NOT OPENSSL_ANDROID_DIR AND DEFINED ENV{OPENSSL_ANDROID_DIR})

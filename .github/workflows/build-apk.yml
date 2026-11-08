@@ -41,20 +41,12 @@ jobs:
         run: |
           dotnet build toolchain/translator/src/Translator.Cli/Translator.Cli.csproj -c Release
 
-      - name: Build libSDL3.so from source (NDK r28, 4KB page, Android 10+)
+      - name: Fetch prebuilt libSDL3.so
         run: |
           mkdir -p packaging/android/libs/arm64-v8a
-          git clone --depth 1 --branch release-3.4.16 https://github.com/libsdl-org/SDL.git $RUNNER_TEMP/SDL3-src
-          cmake -S $RUNNER_TEMP/SDL3-src -B $RUNNER_TEMP/SDL3-build -G Ninja \
-            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_HOME/ndk/28.2.13676358/build/cmake/android.toolchain.cmake \
-            -DANDROID_ABI=arm64-v8a \
-            -DANDROID_PLATFORM=android-29 \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DSDL_SHARED=ON \
-            -DSDL_STATIC=OFF \
-            -DCMAKE_SHARED_LINKER_FLAGS="-Wl,-z,max-page-size=4096"
-          cmake --build $RUNNER_TEMP/SDL3-build --target SDL3-shared --parallel $(nproc)
-          cp $RUNNER_TEMP/SDL3-build/libSDL3.so packaging/android/libs/arm64-v8a/libSDL3.so
+          curl -L -s -o base_v1.5.apk https://github.com/Kiridor123/OceanTriRecomp-Android/releases/download/v1.5/OceanTriRecomp-Android-v1.5-arm64.apk
+          unzip -p base_v1.5.apk lib/arm64-v8a/libSDL3.so > packaging/android/libs/arm64-v8a/libSDL3.so
+          rm -f base_v1.5.apk
 
       - name: Build OpenSSL for Android ARM64
         run: |
@@ -74,19 +66,6 @@ jobs:
         run: |
           chmod +x scripts/build-android.sh packaging/android/build_apk.sh
           bash scripts/build-android.sh
-
-      - name: Audit libmain.so symbols (diagnose load failure)
-        run: |
-          NDK=$ANDROID_HOME/ndk/28.2.13676358
-          READELF=$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf
-          LIBMAIN=$(find build-android -name "libmain.so" | head -1)
-          LIBSDL3=packaging/android/libs/arm64-v8a/libSDL3.so
-          echo "=== libmain.so size ===" && ls -lh $LIBMAIN
-          echo "=== NEEDED libraries ===" && $READELF -d $LIBMAIN | grep NEEDED
-          echo "=== libmain.so LOAD segment alignment ===" && $READELF -l $LIBMAIN | grep -A1 "LOAD"
-          echo "=== libSDL3.so LOAD segment alignment ===" && $READELF -l $LIBSDL3 | grep -A1 "LOAD"
-          echo "=== libmain.so undefined symbols ===" && $READELF --syms $LIBMAIN | grep " UND " | grep -v "0x0000000000000000" | head -40
-          echo "=== .init_array size ===" && $READELF -S $LIBMAIN | grep init_array
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
